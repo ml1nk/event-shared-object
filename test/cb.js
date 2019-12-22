@@ -2,15 +2,16 @@ const expect = require('chai').expect;
 const path = require('path');
 const eso = require(path.resolve(__dirname, "..", "index.js"));
 const h = require("./helper.js");
-const socket = h.socket();
 
 describe('cb', ()=>{
 
     it('init', async () => {
+        const socket = h.socket();
+
         let i = 0;
 
-        eso("channel1", socket.s0, { "test" : 42});
-        const slave = eso("channel1", socket.s1, (key, last, current)=>{
+        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0.on);
+        const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit, (key, last, current)=>{
             switch(i) {
                 case 0:
                     expect(key).equal("test");
@@ -68,33 +69,13 @@ describe('cb', ()=>{
 
         await h.timeout(5);
 
-        slave.write("test", 44);
-
-        await h.timeout(5);
-
-        slave.write("testA", 46);
-
-        await h.timeout(5);
-
-        slave.write("test", 46);
-
-        await h.timeout(5);
-
-        slave.write("testB", 47);
-
-        await h.timeout(5);
-
-        slave.remove("testB");
-
-        await h.timeout(5);
-
-        slave.write("testB", 48);
-
-        await h.timeout(5);
-
-        slave.load({ "testB": 50 });
-
-        await h.timeout(5);
+        await slave.write("test", 44);
+        await slave.write("testA", 46);
+        await slave.write("test", 46);
+        await slave.write("testB", 47);
+        await slave.remove("testB");
+        await slave.write("testB", 48);
+        await slave.load({ "testB": 50 });
 
         expect(i).equal(10);
 

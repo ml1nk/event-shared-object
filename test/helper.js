@@ -5,7 +5,7 @@ function _replace(s, emit) {
         let d = c;
         if(typeof c === "function")
             d = (a, b) => {
-                return c(a,JSON.parse(JSON.stringify(b)));
+                setTimeout(()=>c(a,b ? JSON.parse(JSON.stringify(b)) : undefined), 1);
             }
         b = JSON.parse(JSON.stringify(b));
         setTimeout(()=>emit(a, b, d), 1);
@@ -25,6 +25,9 @@ exports.socket = ()=>{
 
     _replace(s0, s1emit);
     _replace(s1, s0emit);
+
+    s0.on = s0.on.bind(s0);
+    s1.on = s1.on.bind(s1);
 
     return {
         s0 : s0,
