@@ -9,7 +9,7 @@ describe('base', ()=>{
         const socket = h.socket();
         const master = eso.master("channel1", socket.s0.emit, { "test" : 42});
 
-        master.register(socket.s0.on);
+        master.register(socket.s0);
 
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
@@ -20,7 +20,7 @@ describe('base', ()=>{
 
     it('load', async () => {
         const socket = h.socket();
-        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0);
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
         await h.timeout(10);
@@ -37,7 +37,7 @@ describe('base', ()=>{
 
     it('write', async () => {
         const socket = h.socket();
-        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0);
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
         await h.timeout(10);
@@ -54,7 +54,7 @@ describe('base', ()=>{
 
     it('reinit', async () => {
         const socket = h.socket();
-        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0);
 
         let i=0;
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit,(key, last, current)=>{
@@ -91,7 +91,7 @@ describe('base', ()=>{
 
     it('rev-1', async () => {
         const socket = h.socket();
-        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0);
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
         socket.s0.emit("channel1", {
@@ -108,7 +108,7 @@ describe('base', ()=>{
 
     it('remove', async () => {
         const socket = h.socket();
-        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0);
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
         await h.timeout(10);
@@ -132,7 +132,7 @@ describe('base', ()=>{
 
     it('rev', async () => {
         const socket = h.socket();
-        eso.master("channel1", socket.s0.emit, { "test" : 42, "testB": 43 }).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42, "testB": 43 }).register(socket.s0);
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
         await h.timeout(10);
@@ -147,7 +147,7 @@ describe('base', ()=>{
 
     it('return', async () => {
         const socket = h.socket();
-        eso.master("channel1", socket.s0.emit, { "test" : 42 }).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42 }).register(socket.s0);
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
         expect(await slave.load({ "testC" : 22})).to.be.false;

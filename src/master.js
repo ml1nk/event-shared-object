@@ -3,6 +3,7 @@ const s = require("./shared.js");
 function master(name, emit, obj, cb) {
 
     let rev = 0;
+    let registered = [];
 
     function _on(data, _cb) {
         if (data.op == "i") {
@@ -46,8 +47,32 @@ function master(name, emit, obj, cb) {
         _cb(true);
     }
 
+    function register(receiver) {
+        if(registered.indexOf(receiver)>-1)
+            return;
+        receiver.on(name, _on);
+        registered.push(receiver);
+    }
+
+    function unregister(receiver) {
+        let i = registered.indexOf(receiver);
+        if(i===-1)
+            return;
+        receiver.off(name, _on);
+        registered.splice(i,1);
+    }
+
+    function dispose() {
+        for (let receiver of registered) {
+            receiver.off(name, _on);
+        }
+        registered = [];
+    }
+
     return {
-        register: (on)=>on(name, _on)
+        register: register,
+        unregister: unregister,
+        dispose : dispose
     }
 }
 

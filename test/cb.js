@@ -10,7 +10,7 @@ describe('cb', ()=>{
 
         let i = 0;
 
-        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0.on);
+        eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0);
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit, (key, last, current)=>{
             switch(i) {
                 case 0:
