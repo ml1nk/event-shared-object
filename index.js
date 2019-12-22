@@ -1,79 +1,141 @@
-const eventemitter3 = require("eventemitter3");
+function eso(name, evext, cb, obj) {
+ 
+    let rev;
 
-class Shared {
+    // fill obj with cb
+    obj = typeof cb === "object" ? cb : obj;
 
-    constructor(name, evcom, obj) {
-        this._name = name;
-        this._evcom = evcom;
-        this._evout = new eventemitter3;
-        this._obj = this._ismaster ? obj : null;
-        this._rev = 0;
-        this._reg = [{}];
-        typeof obj === "object" ? this._master() : this._slave();
-    }
+    // check if master
+    const master = typeof obj === "object";
 
-    on(pos, cb) {
-        pos.reduce((o, i) => {
-            if(!o[0].hasOwnProperty(i)) {
-                o[0][i] = [{}];
-            }
-            return o[0][i]; 
-        }, this._reg).push(cb);
-    }
-
-    off(pos, cb) {
-        let path = [];
-        let cur = this._reg;
-
-        for(let i=0; i<pos.length; i++) {
-            if(!cur[0].hasOwnProperty(pos[i])) return false;
-            path.push(cur);
-            cur = cur[0][pos[i]];
-        }
-
-        for(let i=1; i<cur.length;i++) {
-            if(cur[i] !== cb) continue;
-            if(cur.length>2 || Object.keys(cur[0]).length>0 || path.length===0) {
-                cur.splice(i, 1);
-            } else {
-                let p = path.length-2;
-                for(; p>=0;p--) {
-                    if(path[p].length>2 || Object.keys(path[p][0].length>0)) break;
-                }
-                delete path[p][0][pos[p]];
-            }
-            return true;
-        }
-        return false;
-    }
-
-    _slave() {
-
-    }
-
-    _master() {
-        evcom.on(name, (rev, set, pos, data, cb) => {
-            if (rev !== this.rev) {
-                cb(false);
+    evext.on(name, (data, cb) => {
+        if(master) {
+            if(data.op == "i") {
+                cb(rev, obj);
                 return;
             }
-            _emit(obj, set, pos, data)
-            _apply(obj, set, pos, data);
-            cb(true);
+            if(data.rev != rev)
+                return;
+        } else {
+            if(rev == -1) 
+                return; // init pending
+            if(rev+1 != data.rev) {
+                _init(); // reinit
+                return 
+            }
+        }
+        rev++;
+
+        switch(data.op) {
+            case "l": // load
+                _load(data);
+                if(master) {
+                    evext.emit(name, {
+                        op : "l",
+                        rev : rev, 
+                        obj : data.obj
+                    });
+                }
+                break;
+            case "w": // write
+                _write(data);
+                if(master) {
+                    evext.emit(name, {
+                        op : "w",
+                        rev : rev, 
+                        key : data.key,
+                        value : data.value
+                    });
+                }
+                break;
+            case "r": // remove
+                _remove(data);
+                if(master) {
+                    evext.emit(name, {
+                        op : "r",
+                        rev : rev, 
+                        key : data.key
+                    });
+                }
+                break;
+        }
+    });
+
+    if(master)
+        rev = 0;
+    else
+        _init();
+        
+    
+    // slave function, call for data
+    function _init() {
+        rev = -1;
+        obj = {};
+        evext.emit(name,{
+            op : "i"
+        }, (r, o) => {
+            rev = r;
+            _load({obj:o});
         });
+    }
+
+    function _write(data) {
+        if(typeof cb === "function")
+            cb(data.key, obj[data.key], data.value);
+        obj[data.key] = data.value;
+    }
+
+    function _remove(data) {
+        if(typeof cb === "function")
+            cb(data.key, obj[data.key]);
+        delete obj[data.key];
+    }
+
+    function _load(data) {
+        if(typeof cb === "function") {
+            for (let key in obj) {
+                if(Object.prototype.hasOwnProperty.call(data.obj, key))
+                    continue;
+                cb(key, obj[key]);
+            }
+            for (let key in data.obj) {
+                cb(key, obj[key], data.obj[key]);
+            }
+        }
+        obj = data.obj;
+    }
+
+    function write(key, value) {
+        evext.emit(name,{
+            op : "w", // write
+            rev : rev,
+            key : key,
+            value : value
+        });
+    }
+
+    function remove(key) {
+        evext.emit(name,{
+            op : "r", // remove
+            rev : rev,
+            key : key
+        });
+    }
+
+    function load(obj) {
+        evext.emit(name,{
+            op : "l", // load
+            rev : rev,
+            obj : obj
+        });
+    }
+
+    return {
+        write : write,
+        remove : remove,
+        obj : () => obj,
+        load : load
     }
 }
 
-function _emit(obj, set, pos, data) {
-    let pre = pos.slice(0, -1).reduce((o, i) => o[i], obj);
-
-}
-
-function _apply(obj, set, pos, data) {
-    let pre = pos.slice(0, -1).reduce((o, i) => o[i], obj);
-    set ? pre[pos[pos.length-1]] = data : delete pre[pos[pos.length-1]];
-}
-
-
-exports._apply = _apply;
-exports.Shared = Shared;
+module.exports = eso;
