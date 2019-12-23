@@ -105,14 +105,14 @@ describe('base', ()=>{
 
         expect(slave.obj.test).equal(42);
     });
-
-
+    
     it('reinit', async () => {
         const socket = h.socket();
         eso.master("channel1", socket.s0.emit, { "test" : 42}).register(socket.s0);
 
         let i=0;
-        const slave = eso.slave("channel1", socket.s1, socket.s1.emit,(key, last, current)=>{
+        const slave = eso.slave("channel1", socket.s1, socket.s1.emit);
+        slave.register((key, last, current)=>{
             switch(i) {
                 case 0:
                     expect(key).equal("test");

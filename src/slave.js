@@ -1,8 +1,9 @@
 const s = require("./shared.js");
 
-function slave(name, receiver, emit, cb) {
+function slave(name, receiver, emit) {
 
     let rev;
+    let registered = [];
     let obj = {};
 
     receiver.on(name, _on);
@@ -19,13 +20,13 @@ function slave(name, receiver, emit, cb) {
 
         switch (data.op) {
             case "l": // load
-                s._load(obj, data, cb);
+                s._load(obj, data, registered);
                 break;
             case "w": // write
-                s._write(obj, data, cb);
+                s._write(obj, data, registered);
                 break;
             case "r": // remove
-                s._remove(obj, data, cb);
+                s._remove(obj, data, registered);
                 break;
         }
     }
@@ -38,7 +39,7 @@ function slave(name, receiver, emit, cb) {
             rev = r;
             s._load(obj, {
                 obj: o
-            }, cb);
+            }, registered);
         });
     }
 
@@ -79,7 +80,29 @@ function slave(name, receiver, emit, cb) {
         });
     }
 
+    function register(receiver) {
+        if(registered.indexOf(receiver)>-1)
+            return;
+        registered.push(receiver);
+        for(const key in obj) {
+            receiver(key, undefined, obj[key]);
+        }
+    }
+
+    function unregister(receiver) {
+        let i = registered.indexOf(receiver);
+        if(i===-1)
+            return;
+        registered.splice(i,1);
+        for(const key in obj) {
+            receiver(key, obj[key], undefined);
+        }
+    }
+
     function dispose() {
+        for (const receiver of registered) {
+            unregister(receiver);
+        }
         receiver.off(name, _on);
     }
 
@@ -88,6 +111,8 @@ function slave(name, receiver, emit, cb) {
         remove: remove,
         obj: obj,
         load: load,
+        register : register,
+        unregister : unregister,
         dispose : dispose
     }
 }

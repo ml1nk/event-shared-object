@@ -1,6 +1,6 @@
 const s = require("./shared.js");
 
-function master(name, emit, obj, cb) {
+function master(name, emit, obj) {
 
     let rev = 0;
     let registered = [];
@@ -19,7 +19,7 @@ function master(name, emit, obj, cb) {
 
         switch (data.op) {
             case "l": // load
-                s._load(obj, data, cb);
+                s._load(obj, data);
                 emit(name, {
                     op: "l",
                     rev: rev,
@@ -27,7 +27,7 @@ function master(name, emit, obj, cb) {
                 });
                 break;
             case "w": // write
-                s._write(obj, data, cb);
+                s._write(obj, data);
                 emit(name, {
                     op: "w",
                     rev: rev,
@@ -36,7 +36,7 @@ function master(name, emit, obj, cb) {
                 });
                 break;
             case "r": // remove
-                s._remove(obj, data, cb);
+                s._remove(obj, data);
                 emit(name, {
                     op: "r",
                     rev: rev,
@@ -63,7 +63,7 @@ function master(name, emit, obj, cb) {
     }
 
     function dispose() {
-        for (let receiver of registered) {
+        for (const receiver of registered) {
             receiver.off(name, _on);
         }
         registered = [];
