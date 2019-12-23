@@ -7,13 +7,13 @@ function slave(name, receiver, emit) {
     let obj = {};
 
     receiver.on(name, _on);
-    _init();
+    sync();
 
     function _on(data) {
         if (rev == -1)
             return; // init pending
         if (rev + 1 != data.rev) {
-            _init(); // reinit
+            sync(); // reinit
             return
         }
         rev++;
@@ -31,7 +31,7 @@ function slave(name, receiver, emit) {
         }
     }
 
-    function _init() {
+    function sync() {
         rev = -1;
         emit(name, {
             op: "i"
@@ -113,7 +113,8 @@ function slave(name, receiver, emit) {
         load: load,
         register : register,
         unregister : unregister,
-        dispose : dispose
+        dispose : dispose,
+        sync : sync
     }
 }
 
