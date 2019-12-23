@@ -10,6 +10,7 @@ describe('base', ()=>{
         const master = eso.master("channel1", socket.s0.emit, { "test" : 42});
 
         master.register(socket.s0);
+        master.register(socket.s0); // unique test
 
         const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
 
@@ -49,6 +50,45 @@ describe('base', ()=>{
         await slave.write("test", 44);
 
         expect(slave.obj.test).equal(44);
+    });
+
+    it('unregister', async () => {
+        const socket = h.socket();
+        const master = eso.master("channel1", socket.s0.emit, { "test" : 42});
+        const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
+        master.register(socket.s0);
+        
+        await h.timeout(10);
+
+        await slave.write("test", 43);
+
+        expect(slave.obj.test).equal(43);
+        master.unregister(socket.s0);
+        master.unregister(socket.s0); // unique test
+        
+        slave.write("test", 44);
+        await h.timeout(10);
+
+        expect(slave.obj.test).equal(43);
+    });
+
+    it('dispose', async () => {
+        const socket = h.socket();
+        const master = eso.master("channel1", socket.s0.emit, { "test" : 42});
+        const slave = eso.slave("channel1", socket.s1.on, socket.s1.emit);
+        master.register(socket.s0);
+        
+        await h.timeout(10);
+
+        await slave.write("test", 43);
+
+        expect(slave.obj.test).equal(43);
+        master.dispose();
+
+        slave.write("test", 44);
+        await h.timeout(10);
+
+        expect(slave.obj.test).equal(43);
     });
 
 
