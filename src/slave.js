@@ -1,11 +1,11 @@
 const s = require("./shared.js");
 
-function slave(name, on, emit, cb) {
+function slave(name, receiver, emit, cb) {
 
     let rev;
     let obj = {};
 
-    on(name, _on);
+    receiver.on(name, _on);
     _init();
 
     function _on(data) {
@@ -79,11 +79,16 @@ function slave(name, on, emit, cb) {
         });
     }
 
+    function dispose() {
+        receiver.off(name, _on);
+    }
+
     return {
         write: write,
         remove: remove,
         obj: obj,
-        load: load
+        load: load,
+        dispose : dispose
     }
 }
 
